@@ -1,0 +1,1 @@
+"""Packaged synthetic assessment definitions."""

@@ -1,0 +1,27 @@
+# Threat model
+
+## Assets, actors and entry points
+
+Protect the operator's network access, target and judge credentials, database access, synthetic fixtures, assessment integrity and evidence confidentiality. A trusted operator controls the environment, scenario directory, allowed endpoints and workstation. Remote targets, model outputs, retrieved text, tool descriptions, judge replies and browser origins can be adversarial.
+
+The API, scenario loader, HTTP target and judge adapters, database, dashboard and exported reports are separate entry points. The simulator models a public support reader in tenant north, a support agent with a fixed set of scopes and a deputy whose identity does not confer the original caller's authority. The fixture suite also models malicious document contributors and agents attempting to change role or approval state.
+
+| Attack path | Control in this release | Residual risk |
+|---|---|---|
+| API client registers a metadata endpoint and steals a credential | The API accepts only an operator-defined profile ID and explicit confirmation. Credentials belong to that profile. Mixed, private, loopback, non-public and link-local DNS answers are rejected. The connection uses a validated numeric IP with original TLS hostname and Host. Proxies and redirects are disabled. | A malicious approved public service can misuse the credentials it legitimately receives. Use scoped test credentials and an egress firewall. |
+| Deployment profile changes after approval | A canonical profile fingerprint is stored at registration and checked on submission. | Credentials can rotate underneath the same environment reference. Record rotations in the operator's secret manager. |
+| Browser site sends an assessment request to localhost | API checks Host and Origin. JSON request bodies have a streaming size cap. Compose publishes only on loopback. | A local process can make requests directly. The supported deployment assumes exclusive access by the operator. |
+| A target streams unlimited data or redirects to an internal host | Raw response cap, total per-attempt timeout, identity encoding, disabled redirects, per-profile pacing and global concurrency limits. | Slow endpoints can consume capacity until timeout. Request timeouts cannot undo remote side effects. |
+| A retry repeats an action | Default zero remote retries unless the operator declares idempotency. Retries reuse the original per-turn key. | A service that ignores the key may duplicate actions. Use disposable remote fixtures. |
+| A poisoned document is ranked above trusted policy | The secured retriever filters tenant, ACL and provenance before ranking. Document content has no execution authority. | The deterministic corpus models a small lexical retrieval system. Production ranking and indexing require separate coverage. |
+| Agent uses a deputy or conversational approval to invoke a tool | Tool dispatch checks caller scope, tenant-linked arguments, actor and trusted approval state against closed in-memory tools. Each invocation emits an audit record. | External target receipts are self-reported. Independent server audit collection would strengthen the evidence. |
+| A model response includes a credential, script or malicious Markdown | Evaluate in memory. Store constrained evidence projections. Escape dynamic content and bound response sizes. HTML exports returned by the API also receive a restrictive CSP. | Trusted scenario content, labels and host-managed configuration must contain only synthetic data. Local operators can read the SQLite file and exports. |
+| A judge fabricates a verdict or cites nonexistent evidence | Validate a typed schema and cited turn, store a constrained advisory opinion, preserve review status and deterministic verdict. | A model can still produce an unjustified opinion citing a valid turn. |
+| Process exits between execution and persistence | One transaction records each execution, verdict, finding and audit trail. Startup marks orphaned selections interrupted. | Remote side effects may have happened before commit. Automatic replay would require stronger idempotency guarantees. |
+| Malicious local scenario package contains executable content | JSON-only schema, known rule types, finite step counts and file limits. No template evaluation, plugin import from data, shell or filesystem tools. | Installed Python extensions and the configured scenario directory are trusted. A local administrator controls the process. |
+
+## Operational boundaries
+
+PostgreSQL is private to Compose, and the web service runs without Linux capabilities on a read-only root filesystem. The database password is operator supplied. Persisted records have no application-layer encryption. Protect storage, backups and exported reports at the host level. The service has no user authentication, per-user ownership, retention policy or distributed coordination. Internet-facing or shared deployments require additional controls.
+
+The design uses the following resources for terminology and threat coverage. Scenario coverage is deliberately limited to its tested fixtures. [OWASP Top 10 for LLM Applications](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/) · [OWASP Top 10 for Agentic Applications](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/) · [MITRE ATLAS](https://atlas.mitre.org/) · [NIST AI RMF](https://www.nist.gov/itl/ai-risk-management-framework)
