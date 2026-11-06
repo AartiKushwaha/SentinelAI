@@ -63,3 +63,10 @@ class Settings(BaseSettings):
     judge_model: str | None = Field(None, max_length=200)
     min_confidence: float = Field(0.85, ge=0, le=1)
     price_per_million_tokens: float | None = Field(None, ge=0)
+    public_demo: bool = False
+
+    @model_validator(mode="after")
+    def validate_public_demo(self):
+        if self.public_demo and (self.profiles or self.provider != "off"):
+            raise ValueError("Public demos require local fixtures and an offline evaluator")
+        return self

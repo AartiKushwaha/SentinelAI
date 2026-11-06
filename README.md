@@ -6,6 +6,12 @@ A support assistant can refuse a request while its retriever still exposes anoth
 
 ## Run the demo
 
+For a public hosted demonstration, deploy `streamlit_app.py` on Streamlit
+Community Cloud with Python 3.13. It starts the local backend automatically,
+seeds both synthetic targets and provides the same scenario execution and reports.
+The shared history retains 50 assessments and resets on restart.
+[Hosting guide](docs/HOSTING.md)
+
 Use Python 3.12 or later. From the repository root on Windows:
 
 ```powershell

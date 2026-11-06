@@ -22,6 +22,7 @@ from app.database.models import (
     Selection,
     Target,
 )
+from app.database.retention import trim_demo_history
 from app.database.store import Store
 from app.demo.lab import SecurityLab
 from app.evaluation.evidence import project
@@ -81,6 +82,8 @@ class Scheduler:
                 raise Problem(404, "target_not_found")
             config = target.config
             remote = config["adapter"] == "http"
+            if self.cfg.public_demo and remote:
+                raise Problem(403, "public_demo_requires_local_target")
             profile = self.cfg.profiles.get(config.get("profile") or "")
             if remote and (
                 not profile
@@ -110,6 +113,8 @@ class Scheduler:
             if not selected or (ids and len(selected) != len(ids)):
                 raise Problem(422, "empty_or_incompatible_selection")
             limit = min(request.concurrency or self.cfg.concurrency, self.cfg.concurrency)
+            if self.cfg.public_demo:
+                trim_demo_history(db)
             run = Assessment(
                 target_id=target.id,
                 config={

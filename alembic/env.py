@@ -4,7 +4,7 @@ from alembic import context
 from app.core.config import Settings
 from app.database.models import Base
 
-url = Settings().database_url.get_secret_value()
+url = context.config.attributes.get("database_url") or Settings().database_url.get_secret_value()
 if context.is_offline_mode():
     context.configure(url=url, target_metadata=Base.metadata, literal_binds=True)
     with context.begin_transaction():

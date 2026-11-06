@@ -59,6 +59,8 @@ def routes(settings: Settings, store: Store, registry: Registry, jobs: Scheduler
 
     @api.post("/targets", status_code=201, response_model=TargetView)
     async def register(body: TargetRegistration):
+        if settings.public_demo:
+            raise Problem(403, "demo_targets_are_preconfigured")
         config = body.model_dump(mode="json", exclude={"name"})
         if body.adapter == "http":
             if body.profile == settings.judge_profile or body.profile not in settings.profiles:
@@ -99,6 +101,8 @@ def routes(settings: Settings, store: Store, registry: Registry, jobs: Scheduler
 
     @api.delete("/targets/{target_id}", status_code=204)
     async def delete_target(target_id: UUID):
+        if settings.public_demo:
+            raise Problem(403, "demo_targets_are_preconfigured")
         try:
             with store.session.begin() as db:
                 target = db.get(Target, target_id)
@@ -196,6 +200,8 @@ def routes(settings: Settings, store: Store, registry: Registry, jobs: Scheduler
 
     @api.patch("/assessments/{run_id}/executions/{execution_id}/review")
     async def review(run_id: UUID, execution_id: UUID, body: Review):
+        if settings.public_demo:
+            raise Problem(403, "review_requires_operator_deployment")
         with store.session.begin() as db:
             evaluation = db.scalar(
                 select(Evaluation)
